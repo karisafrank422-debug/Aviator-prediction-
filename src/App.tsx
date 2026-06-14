@@ -57,6 +57,7 @@ export default function App() {
   );
   const [suggestedLow, setSuggestedLow] = useState<number>(1.25);
   const [suggestedHigh, setSuggestedHigh] = useState<number>(2.40);
+  const [predictedCrashPoint, setPredictedCrashPoint] = useState<number>(1.85);
   const [isPredicting, setIsPredicting] = useState<boolean>(false);
 
   // Time reference variables
@@ -83,6 +84,9 @@ export default function App() {
       setAiRationals(data.aiRationals);
       setSuggestedLow(data.suggestedCashoutLow);
       setSuggestedHigh(data.suggestedCashoutHigh);
+      if (data.predictedCrashPoint) {
+        setPredictedCrashPoint(data.predictedCrashPoint);
+      }
     } catch (err) {
       console.error("Predictive call error:", err);
       const avg = currentHistory.reduce((a, b) => a + b, 0) / currentHistory.length;
@@ -93,6 +97,7 @@ export default function App() {
         earlyCrashRate: 25.0
       });
       setAiRationals("Offline math metrics enabled. Re-run or provide active API keys.");
+      setPredictedCrashPoint(parseFloat((avg * 1.34).toFixed(2)));
     } finally {
       setIsPredicting(false);
     }
@@ -252,17 +257,38 @@ export default function App() {
           <div className="grid grid-cols-3 gap-2.5">
             {(['Room #1', 'Room #2', 'Room #3'] as const).map((r) => {
               const isActive = selectedRoom === r;
+              const roomHist = roomHistories[r] || [];
+              const latestThree = roomHist.slice(-3).reverse();
               return (
                 <button
                   key={r}
                   onClick={() => handleRoomSelect(r)}
-                  className={`py-3 rounded-lg text-xs font-bold uppercase tracking-wide flex items-center justify-center gap-1.5 transition duration-150 border cursor-pointer ${
+                  className={`py-2.5 px-3 rounded-xl text-xs font-bold uppercase transition-all duration-150 border cursor-pointer flex flex-col items-center gap-1.5 ${
                     isActive
-                      ? 'bg-rose-950/20 border-rose-600 text-rose-400 shadow shadow-rose-950/40'
-                      : 'bg-slate-950/50 hover:bg-slate-900 border-slate-850 text-slate-500 hover:text-slate-300'
+                      ? 'bg-slate-900 border-green-500 text-slate-100 shadow-lg shadow-green-500/15 ring-1 ring-green-500/20'
+                      : 'bg-slate-950/60 hover:bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-100'
                   }`}
                 >
-                  <span className="text-[10px]">✕</span> {r}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-red-500 font-extrabold text-[11px] select-none">✕</span>
+                    <span className="tracking-wide">{r}</span>
+                  </div>
+                  {/* Selected room run history endpoints summary */}
+                  <div className="flex items-center gap-1 flex-wrap justify-center">
+                    {latestThree.map((val, idx) => (
+                      <span 
+                        key={idx} 
+                        className={`text-[8px] sm:text-[9px] px-1 rounded font-mono ${
+                          val >= 2.0 ? 'bg-emerald-950/40 text-emerald-400 border border-emerald-900/40 font-bold' : 'bg-slate-900 text-slate-400 border border-slate-800'
+                        }`}
+                      >
+                        {val.toFixed(2)}x
+                      </span>
+                    ))}
+                    {latestThree.length === 0 && (
+                      <span className="text-[8px] text-slate-500 italic">No runs yet</span>
+                    )}
+                  </div>
                 </button>
               );
             })}
@@ -289,6 +315,8 @@ export default function App() {
               status={status} 
               multiplier={multiplier} 
               countdown={countdown} 
+              predictedCrashPoint={predictedCrashPoint}
+              activeRoom={selectedRoom}
             />
 
             {/* Simulated Dual Betting Console */}
@@ -315,6 +343,7 @@ export default function App() {
           aiRationals={aiRationals}
           suggestedCashoutLow={suggestedLow}
           suggestedCashoutHigh={suggestedHigh}
+          predictedCrashPoint={predictedCrashPoint}
           isPredicting={isPredicting}
           onTriggerAI={() => triggerPredictiveCalculation(history, true, selectedRoom)}
         />

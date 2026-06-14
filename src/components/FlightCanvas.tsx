@@ -5,9 +5,11 @@ interface FlightCanvasProps {
   status: 'waiting' | 'climbing' | 'crashed';
   multiplier: number;
   countdown: number;
+  predictedCrashPoint?: number;
+  activeRoom?: string;
 }
 
-export const FlightCanvas: React.FC<FlightCanvasProps> = ({ status, multiplier, countdown }) => {
+export const FlightCanvas: React.FC<FlightCanvasProps> = ({ status, multiplier, countdown, predictedCrashPoint, activeRoom }) => {
   const [starOffset, setStarOffset] = useState(0);
 
   // Animate grid background lines during flight to simulate forward momentum
@@ -43,7 +45,13 @@ export const FlightCanvas: React.FC<FlightCanvasProps> = ({ status, multiplier, 
       />
 
       {/* Radiant vector rays background from the actual Betika screenshot */}
-      <div className="absolute inset-y-0 left-0 right-1/2 bg-gradient-to-r from-indigo-5050/10 to-transparent pointer-events-none transform -skew-x-12 origin-bottom-left animate-pulse" />
+      <div className="absolute inset-y-0 left-0 right-1/2 bg-gradient-to-r from-indigo-5055/10 to-transparent pointer-events-none transform -skew-x-12 origin-bottom-left animate-pulse" />
+
+      {/* Top Left Live Room Indicator */}
+      <div className="absolute top-4 left-4 z-30 bg-slate-900/90 border border-slate-800 rounded-xl px-3 py-1.5 font-mono text-[10px] text-slate-300 flex items-center gap-2 shadow-lg select-none">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span className="font-extrabold text-white tracking-widest uppercase">Target Focus: {activeRoom || 'Room #3'}</span>
+      </div>
 
       {/* Waiting State */}
       {status === 'waiting' && (
@@ -76,6 +84,16 @@ export const FlightCanvas: React.FC<FlightCanvasProps> = ({ status, multiplier, 
             </h3>
             <p className="text-xs text-slate-400 font-mono mt-1">Place simulated bets on Betika Predictor now</p>
           </div>
+
+          {predictedCrashPoint && (
+            <div className="bg-rose-950/70 border border-rose-500/40 text-rose-300 text-xs py-2 px-5 rounded-xl flex flex-col items-center gap-1 font-mono shadow-xl animate-pulse">
+              <span className="text-[10px] text-slate-400 font-sans tracking-wide uppercase font-bold">Betika End Point Prediction</span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-xl font-black text-rose-400">{predictedCrashPoint.toFixed(2)}x</span>
+                <span className="text-[9px] text-rose-500 font-bold uppercase">(Target limit)</span>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -139,6 +157,31 @@ export const FlightCanvas: React.FC<FlightCanvasProps> = ({ status, multiplier, 
               Plane Ascending
             </span>
           </div>
+
+          {predictedCrashPoint && (
+            <div className="absolute top-4 right-4 bg-slate-900/90 border border-slate-800 rounded-xl p-3 font-mono z-20 flex flex-col gap-1 shadow-lg w-44">
+              <div className="flex items-center gap-1.5 justify-between">
+                <span className="text-[9px] text-slate-400 uppercase font-black">Predicted End Point</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+              </div>
+              <div className="text-base font-black text-rose-400 text-right">
+                {predictedCrashPoint.toFixed(2)}x
+              </div>
+              {/* Progress bar towards prediction */}
+              <div className="w-full bg-slate-950 rounded-full h-1 overflow-hidden mt-1">
+                <div 
+                  className="bg-gradient-to-r from-red-500 to-rose-500 h-full transition-all duration-300"
+                  style={{ width: `${Math.min(100, (multiplier / predictedCrashPoint) * 100)}%` }}
+                />
+              </div>
+              <div className="flex justify-between items-center text-[8px] text-slate-400 mt-0.5">
+                <span>Distance Progress</span>
+                <span className="text-rose-400 font-bold">
+                  {Math.min(100, Math.floor((multiplier / predictedCrashPoint) * 100))}%
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -157,6 +200,22 @@ export const FlightCanvas: React.FC<FlightCanvasProps> = ({ status, multiplier, 
           <p className="text-xs text-slate-400 font-mono max-w-[280px] mt-1">
             Analyzing flight telemetry patterns. Next round prediction loading...
           </p>
+
+          {predictedCrashPoint && (
+            <div className="mt-4 bg-slate-900/80 border border-slate-800 rounded-xl px-4 py-2.5 text-xs font-mono text-slate-300 flex items-center justify-center gap-4 shadow-lg animate-fade-in">
+              <div className="text-left">
+                <span className="text-[9px] text-slate-500 block uppercase font-bold tracking-wide">Expected End limit</span>
+                <span className="text-rose-400 font-black text-sm">{predictedCrashPoint.toFixed(2)}x</span>
+              </div>
+              <div className="w-px h-7 bg-slate-800" />
+              <div className="text-left">
+                <span className="text-[9px] text-slate-500 block uppercase font-bold tracking-wide">Prediction Accuracy</span>
+                <span className="text-emerald-400 font-black text-sm">
+                  {Math.max(12, Math.min(99, Math.round(100 - Math.abs(multiplier - predictedCrashPoint) / predictedCrashPoint * 100)))}%
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

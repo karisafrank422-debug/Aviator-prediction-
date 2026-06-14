@@ -107,10 +107,14 @@ app.post("/api/predict", async (req, res) => {
   const nextRoundProbability1_5 = Math.min(95, Math.max(10, Math.floor((0.97 / 1.5) * 100 * skewMultiplier)));
   const nextRoundProbability2_0 = Math.min(95, Math.max(5, Math.floor((0.97 / 2.0) * 100 * skewMultiplier)));
 
+  // Realistic point prediction of the crash limit (calibrated for the Betika Spribe cycle math)
+  const predictedCrashPoint = parseFloat((ema * 1.34 * skewMultiplier).toFixed(2));
+
   localCommentary += `• **Next Round Probability metrics:**\n`;
   localCommentary += `  - Probability of reaching **1.50x**: **${nextRoundProbability1_5}%**\n`;
   localCommentary += `  - Probability of reaching **2.00x**: **${nextRoundProbability2_0}%**\n`;
-  localCommentary += `• **Strategy Target KES:** Suggest auto-cashout index set between **${baseMin.toFixed(2)}x and ${baseMax.toFixed(2)}x** matching standard exponential scaling.\n\n`;
+  localCommentary += `• **Strategy Target KES:** Suggest auto-cashout index set between **${baseMin.toFixed(2)}x and ${baseMax.toFixed(2)}x** matching standard exponential scaling.\n`;
+  localCommentary += `• **Crash End Point Prediction:** Expected to climb up to **${predictedCrashPoint.toFixed(2)}x** this round.\n\n`;
   localCommentary += `*To request the complete statistical simulation and detailed LLM strategy discussion, click "**Formulate AI Strategy**" above.*`;
 
   // If the request does not explicitly expect Gemini AI processing, return local calculations instantly
@@ -124,7 +128,8 @@ app.post("/api/predict", async (req, res) => {
       },
       aiRationals: localCommentary,
       suggestedCashoutLow: baseMin,
-      suggestedCashoutHigh: baseMax
+      suggestedCashoutHigh: baseMax,
+      predictedCrashPoint: predictedCrashPoint
     });
     return;
   }
@@ -134,14 +139,14 @@ app.post("/api/predict", async (req, res) => {
 
     const systemPrompt = `You are a professional mathematician, statistician, and risk analyst specializing in Provably Fair gaming algorithms (like Aviator/Crash) on the Betika Kenya Spribe Server network.
 Your duty is to parse the user's historical crash sequence for ${activeRoom}, identify trend patterns, evaluate hot/cold intervals, and provide a detailed mathematical forecast/prediction rationale.
-Always remind the user of the strictly random and independent nature of RNG (with a standard 3% house edge), ensuring educational alignment, but propose sound statistical targets. Recommend Safaricom/M-PESA cash-out latencies adaptation.`;
+Always remind the user of the strictly random and independent nature of RNG (with a standard 3% house edge), ensuring educational alignment, but propose sound statistical targets. Recommend Safaricom/M-PESA cash-out latencies adaptation. Highlight the specific predicted end point multiplier of ${predictedCrashPoint.toFixed(2)}x.`;
 
     const contents = `Analyze this sequence of the last ${n} multiplier cashout limits from ${activeRoom} on the active Betika Kenya servers: [${CleanHistory.join(", ")}].
 Calculate the trend trajectory based on standard regression cycles and probability distributions.
 
 Provide a response matching this structure:
 1. A brief mathematical breakdown of current cycle characteristics in ${activeRoom} (i.e. 'Streak density', 'Skewness', 'Regression towards mean').
-2. An 'AI Predictive Estimate Range' (e.g. 1.25x - 1.85x).
+2. An 'AI Predictive Estimate Range' (suggesting ${baseMin.toFixed(2)}x - ${baseMax.toFixed(2)}x with an expected End Point crash around ${predictedCrashPoint.toFixed(2)}x).
 3. Strategic advice on cashout targets specifically adapted to Betika Kenya (incorporating Safaricom latency and Kelly Criterion safety boundaries).
 Keep the response clear, structured, and using simple markdown bullet points. Max 140 words.`;
 
@@ -162,7 +167,8 @@ Keep the response clear, structured, and using simple markdown bullet points. Ma
       },
       aiRationals: response.text || "Unable to formulate statistical trends.",
       suggestedCashoutLow: baseMin,
-      suggestedCashoutHigh: baseMax
+      suggestedCashoutHigh: baseMax,
+      predictedCrashPoint: predictedCrashPoint
     });
 
   } catch (err: any) {
@@ -180,7 +186,8 @@ Keep the response clear, structured, and using simple markdown bullet points. Ma
       },
       aiRationals: warningCommentary,
       suggestedCashoutLow: baseMin,
-      suggestedCashoutHigh: baseMax
+      suggestedCashoutHigh: baseMax,
+      predictedCrashPoint: predictedCrashPoint
     });
   }
 });

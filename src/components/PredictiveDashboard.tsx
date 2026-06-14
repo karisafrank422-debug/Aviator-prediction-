@@ -22,6 +22,7 @@ interface PredictiveDashboardProps {
   aiRationals: string;
   suggestedCashoutLow: number;
   suggestedCashoutHigh: number;
+  predictedCrashPoint?: number;
   isPredicting: boolean;
   onTriggerAI: () => void;
 }
@@ -32,6 +33,7 @@ export const PredictiveDashboard: React.FC<PredictiveDashboardProps> = ({
   aiRationals,
   suggestedCashoutLow,
   suggestedCashoutHigh,
+  predictedCrashPoint = 1.85,
   isPredicting,
   onTriggerAI
 }) => {
@@ -88,14 +90,20 @@ export const PredictiveDashboard: React.FC<PredictiveDashboardProps> = ({
         </div>
 
         {/* Prediction ranges */}
-        <div className="flex gap-2.5">
-          <div className="bg-slate-950 border border-slate-800 px-3 py-2 rounded-lg text-center">
+        <div className="flex flex-wrap gap-2.5">
+          <div className="bg-slate-950 border border-slate-800 px-3 py-2 rounded-lg text-center flex-1 min-w-[120px]">
             <span className="block text-[9px] uppercase font-mono text-slate-500 font-bold">Suggested Cashout (Low Risk)</span>
             <span className="text-sm font-black text-emerald-400 font-mono">{suggestedCashoutLow.toFixed(2)}x</span>
           </div>
-          <div className="bg-slate-950 border border-slate-800 px-3 py-2 rounded-lg text-center">
+          <div className="bg-slate-950 border border-slate-800 px-3 py-2 rounded-lg text-center flex-1 min-w-[120px]">
             <span className="block text-[9px] uppercase font-mono text-slate-500 font-bold">Calculated Spike Target (High Risk)</span>
             <span className="text-sm font-black text-indigo-400 font-mono">{suggestedCashoutHigh.toFixed(2)}x</span>
+          </div>
+          <div className="bg-rose-950/40 border border-rose-900 px-3.5 py-2 rounded-lg text-center flex-1 min-w-[140px] shadow-lg animate-pulse">
+            <span className="block text-[9px] uppercase font-mono text-rose-300 font-black flex items-center justify-center gap-1 leading-none">
+              <Sparkles className="w-2.5 h-2.5 text-rose-400" /> Expected End Point
+            </span>
+            <span className="text-sm font-black text-rose-400 font-mono block mt-1">{predictedCrashPoint.toFixed(2)}x</span>
           </div>
         </div>
       </div>
