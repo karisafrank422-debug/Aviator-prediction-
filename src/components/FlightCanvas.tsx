@@ -1,0 +1,164 @@
+import React, { useEffect, useState } from 'react';
+import { Play, TrendingUp, Compass, Flame, ShieldAlert } from 'lucide-react';
+
+interface FlightCanvasProps {
+  status: 'waiting' | 'climbing' | 'crashed';
+  multiplier: number;
+  countdown: number;
+}
+
+export const FlightCanvas: React.FC<FlightCanvasProps> = ({ status, multiplier, countdown }) => {
+  const [starOffset, setStarOffset] = useState(0);
+
+  // Animate grid background lines during flight to simulate forward momentum
+  useEffect(() => {
+    if (status !== 'climbing') return;
+    const interval = setInterval(() => {
+      setStarOffset(prev => (prev + 1) % 100);
+    }, 45);
+    return () => clearInterval(interval);
+  }, [status]);
+
+  // Calculate coordinates dynamic plane position based on multiplier height
+  const getPlaneCoordinates = () => {
+    // Range from 1.00x up to whatever
+    const progress = Math.min(1.0, (multiplier - 1.0) / 4.0); // caps visual curve scaling
+    const x = 10 + progress * 70; // 10% to 80%
+    const y = 80 - progress * 60; // 80% down to 20%
+    return { x, y };
+  };
+
+  const planePos = getPlaneCoordinates();
+
+  return (
+    <div className="bg-slate-950 border border-slate-900 rounded-2xl relative overflow-hidden aspect-[16/10] sm:aspect-[16/9] shadow-2xl flex items-center justify-center select-none group">
+      {/* Curved glowing neon grid lines */}
+      <div 
+        className="absolute inset-0 opacity-15"
+        style={{
+          backgroundImage: 'radial-gradient(ellipse at bottom left, #4f46e5 0%, transparent 70%), linear-gradient(0deg, #1e293b 1px, transparent 1px), linear-gradient(90deg, #1e293b 1px, transparent 1px)',
+          backgroundSize: '100% 100%, 40px 40px, 40px 40px',
+          backgroundPosition: `0px 0px, -${starOffset}px ${starOffset}px, -${starOffset}px ${starOffset}px`
+        }}
+      />
+
+      {/* Radiant vector rays background from the actual Betika screenshot */}
+      <div className="absolute inset-y-0 left-0 right-1/2 bg-gradient-to-r from-indigo-5050/10 to-transparent pointer-events-none transform -skew-x-12 origin-bottom-left animate-pulse" />
+
+      {/* Waiting State */}
+      {status === 'waiting' && (
+        <div className="text-center z-10 flex flex-col items-center gap-4 animate-fade-in">
+          <div className="relative w-20 h-20 flex items-center justify-center">
+            {/* Pulsing countdown circle */}
+            <svg className="absolute inset-0 w-full h-full transform -rotate-90">
+              <circle
+                cx="40"
+                cy="40"
+                r="36"
+                className="stroke-slate-800 fill-transparent"
+                strokeWidth="4"
+              />
+              <circle
+                cx="40"
+                cy="40"
+                r="36"
+                className="stroke-indigo-500 fill-transparent transition-all duration-100"
+                strokeWidth="4"
+                strokeDasharray={`${2 * Math.PI * 36}`}
+                strokeDashoffset={`${2 * Math.PI * 36 * (1 - countdown / 5.0)}`}
+              />
+            </svg>
+            <span className="text-2xl font-black font-mono text-slate-100">{countdown.toFixed(1)}s</span>
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-slate-100 uppercase tracking-wide flex items-center gap-1.5 justify-center">
+              <Compass className="w-5 h-5 text-indigo-400 animate-spin" /> Preparing Launch
+            </h3>
+            <p className="text-xs text-slate-400 font-mono mt-1">Place simulated bets on Betika Predictor now</p>
+          </div>
+        </div>
+      )}
+
+      {/* Climbing Active Flight State */}
+      {status === 'climbing' && (
+        <div className="w-full h-full relative">
+          {/* Exponential curve line */}
+          <svg className="absolute inset-0 w-full h-full pointer-events-none">
+            <path
+              d={`M 10,80 Q ${planePos.x / 2 + 5},${80} ${planePos.x}%,${planePos.y}%`}
+              fill="none"
+              stroke="url(#lineGradient)"
+              strokeWidth="4.5"
+              strokeDasharray="6 4"
+              className="drop-shadow-[0_0_8px_rgba(239,68,68,0.7)]"
+            />
+            <defs>
+              <linearGradient id="lineGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#ef4444" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="#ef4444" stopOpacity="1" />
+              </linearGradient>
+            </defs>
+          </svg>
+
+          {/* Animated Propeller Red Plane */}
+          <div
+            className="absolute transition-all duration-75 ease-out pointer-events-none transform -translate-x-1/2 -translate-y-1/2"
+            style={{
+              left: `${planePos.x}%`,
+              top: `${planePos.y}%`,
+            }}
+          >
+            <div className="relative group/plane">
+              {/* Plane thrust flame */}
+              <div className="absolute top-1/2 -left-6 -translate-y-1/2 w-8 h-4 bg-gradient-to-r from-red-600 via-orange-500 to-transparent blur-xs animate-pulse flex items-center" style={{ clipPath: 'polygon(100% 0, 0 50%, 100% 100%)' }} />
+              
+              {/* SVG Red Biplane matching the Betika style */}
+              <svg className="w-14 h-14 filter drop-shadow-[0_4px_6px_rgba(239,68,68,0.5)] transition" viewBox="0 0 64 64">
+                <g fill="none" stroke="#ef4444" strokeWidth="2.5">
+                  {/* Fuselage */}
+                  <path d="M12,28 C20,26 40,24 50,28 C55,30 55,34 50,36 C40,40 20,38 12,36 Z" fill="#b91c1c" />
+                  {/* Tail Wings */}
+                  <path d="M10,24 L10,40 L16,35 L16,29 Z" fill="#ef4444" />
+                  {/* Flight Cabin Shield */}
+                  <path d="M30,24 Q35,21 38,24" stroke="#93c5fd" strokeWidth="2" />
+                  {/* Giant Biplane Double Main Wings */}
+                  <rect x="28" y="10" width="10" height="44" rx="4" fill="#ef4444" />
+                  {/* Propeller Spinner */}
+                  <line x1="52" y1="20" x2="52" y2="44" stroke="#e2e8f0" strokeWidth="3" className="origin-center animate-[spin_0.3s_linear_infinite]" style={{ transformOrigin: '52px 32px' }} />
+                </g>
+              </svg>
+            </div>
+          </div>
+
+          {/* Centered Large Live Multiplier */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center z-10 select-none">
+            <span className="text-6xl sm:text-7xl font-extrabold font-mono tracking-tight text-white drop-shadow-[0_4px_12px_rgba(15,23,42,0.9)] animate-[pulse_1.5s_infinite]">
+              {multiplier.toFixed(2)}x
+            </span>
+            <span className="text-xs font-semibold uppercase tracking-widest text-emerald-400 bg-emerald-950/70 py-1 px-3 mt-3.5 rounded-full border border-emerald-900/40 font-mono shadow-md animate-pulse">
+              Plane Ascending
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Crashed State */}
+      {status === 'crashed' && (
+        <div className="text-center z-10 flex flex-col items-center gap-2 animate-fade-in px-4">
+          <div className="w-14 h-14 rounded-full bg-red-950/80 border border-red-800 flex items-center justify-center text-red-400 mb-2">
+            <Flame className="w-8 h-8 animate-bounce" />
+          </div>
+          <span className="text-xs font-mono uppercase font-black tracking-widest text-red-500 py-1 px-3 border border-red-900/60 bg-red-950/55 rounded">
+            FLEW AWAY AT
+          </span>
+          <span className="text-6xl font-black font-mono text-white drop-shadow-[0_4px_10px_rgba(220,38,38,0.5)]">
+            {multiplier.toFixed(2)}x
+          </span>
+          <p className="text-xs text-slate-400 font-mono max-w-[280px] mt-1">
+            Analyzing flight telemetry patterns. Next round prediction loading...
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};

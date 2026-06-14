@@ -1,0 +1,6 @@
+{
+  "name": "Betika Aviator Predictor",
+  "description": "High-fidelity predictive telemetry monitor and risk strategy advisor optimized for the Betika Kenya Aviator crash game.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
