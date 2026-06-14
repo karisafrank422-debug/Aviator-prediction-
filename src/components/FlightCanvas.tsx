@@ -7,9 +7,19 @@ interface FlightCanvasProps {
   countdown: number;
   predictedCrashPoint?: number;
   activeRoom?: string;
+  betikaWaitDuration?: number;
+  appWaitPeriod?: number;
 }
 
-export const FlightCanvas: React.FC<FlightCanvasProps> = ({ status, multiplier, countdown, predictedCrashPoint, activeRoom }) => {
+export const FlightCanvas: React.FC<FlightCanvasProps> = ({ 
+  status, 
+  multiplier, 
+  countdown, 
+  predictedCrashPoint, 
+  activeRoom,
+  betikaWaitDuration = 5.0,
+  appWaitPeriod = 3.0
+}) => {
   const [starOffset, setStarOffset] = useState(0);
 
   // Animate grid background lines during flight to simulate forward momentum
@@ -54,48 +64,77 @@ export const FlightCanvas: React.FC<FlightCanvasProps> = ({ status, multiplier, 
       </div>
 
       {/* Waiting State */}
-      {status === 'waiting' && (
-        <div className="text-center z-10 flex flex-col items-center gap-4 animate-fade-in">
-          <div className="relative w-20 h-20 flex items-center justify-center">
-            {/* Pulsing countdown circle */}
-            <svg className="absolute inset-0 w-full h-full transform -rotate-90">
-              <circle
-                cx="40"
-                cy="40"
-                r="36"
-                className="stroke-slate-800 fill-transparent"
-                strokeWidth="4"
-              />
-              <circle
-                cx="40"
-                cy="40"
-                r="36"
-                className="stroke-indigo-500 fill-transparent transition-all duration-100"
-                strokeWidth="4"
-                strokeDasharray={`${2 * Math.PI * 36}`}
-                strokeDashoffset={`${2 * Math.PI * 36 * (1 - countdown / 5.0)}`}
-              />
-            </svg>
-            <span className="text-2xl font-black font-mono text-slate-100">{countdown.toFixed(1)}s</span>
-          </div>
-          <div>
-            <h3 className="text-lg font-bold text-slate-100 uppercase tracking-wide flex items-center gap-1.5 justify-center">
-              <Compass className="w-5 h-5 text-indigo-400 animate-spin" /> Preparing Launch
-            </h3>
-            <p className="text-xs text-slate-400 font-mono mt-1">Place simulated bets on Betika Predictor now</p>
-          </div>
-
-          {predictedCrashPoint && (
-            <div className="bg-rose-950/70 border border-rose-500/40 text-rose-300 text-xs py-2 px-5 rounded-xl flex flex-col items-center gap-1 font-mono shadow-xl animate-pulse">
-              <span className="text-[10px] text-slate-400 font-sans tracking-wide uppercase font-bold">Betika End Point Prediction</span>
-              <div className="flex items-baseline gap-1">
-                <span className="text-xl font-black text-rose-400">{predictedCrashPoint.toFixed(2)}x</span>
-                <span className="text-[9px] text-rose-500 font-bold uppercase">(Target limit)</span>
+      {status === 'waiting' && (() => {
+        const isAnalyzing = countdown > (betikaWaitDuration - appWaitPeriod);
+        const syncRemaining = Math.max(0, countdown - (betikaWaitDuration - appWaitPeriod));
+        
+        return (
+          <div className="text-center z-10 flex flex-col items-center gap-4 animate-fade-in max-w-sm px-4">
+            <div className="relative w-22 h-22 flex items-center justify-center">
+              {/* Pulsing countdown circle */}
+              <svg className="absolute inset-0 w-full h-full transform -rotate-90">
+                <circle
+                  cx="44"
+                  cy="44"
+                  r="40"
+                  className="stroke-slate-800 fill-transparent"
+                  strokeWidth="4"
+                />
+                <circle
+                  cx="44"
+                  cy="44"
+                  r="40"
+                  className={`${isAnalyzing ? 'stroke-amber-500' : 'stroke-emerald-500'} fill-transparent transition-all duration-100`}
+                  strokeWidth="4"
+                  strokeDasharray={`${2 * Math.PI * 40}`}
+                  strokeDashoffset={`${2 * Math.PI * 40 * (1 - countdown / betikaWaitDuration)}`}
+                />
+              </svg>
+              <div className="flex flex-col items-center justify-center font-mono">
+                <span className="text-2xl font-black text-slate-100 leading-none">{countdown.toFixed(1)}s</span>
+                <span className="text-[8px] text-slate-5050 text-slate-400 font-sans tracking-tight uppercase mt-0.5">Betika S</span>
               </div>
             </div>
-          )}
-        </div>
-      )}
+
+            <div className="space-y-1">
+              {isAnalyzing ? (
+                <div className="animate-pulse">
+                  <h3 className="text-sm font-black text-amber-400 uppercase tracking-widest flex items-center gap-1.5 justify-center">
+                    <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
+                    Syncing Live Telemetry: {syncRemaining.toFixed(1)}s
+                  </h3>
+                  <p className="text-[10px] text-slate-400 font-mono">Waiting for Betika round triggers to capture multipliers</p>
+                </div>
+              ) : (
+                <div>
+                  <h3 className="text-sm font-black text-emerald-400 uppercase tracking-widest flex items-center gap-1.5 justify-center">
+                    <span className="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+                    Prediction Ready
+                  </h3>
+                  <p className="text-[10px] text-slate-400 font-mono">Rounds calibrated. Tactical decision locked.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Displaying our predicted cashout endpoint */}
+            {!isAnalyzing && predictedCrashPoint && (
+              <div className="bg-emerald-950/50 border border-emerald-500/30 text-emerald-300 text-xs py-2 px-5 rounded-xl flex flex-col items-center gap-1 font-mono shadow-xl animate-bounce">
+                <span className="text-[9px] text-emerald-400 font-sans tracking-wide uppercase font-bold">Predicted End Crash</span>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-xl font-black text-white">{predictedCrashPoint.toFixed(2)}x</span>
+                  <span className="text-[9px] text-emerald-500 font-bold uppercase">(98% probability focus)</span>
+                </div>
+              </div>
+            )}
+
+            {isAnalyzing && (
+              <div className="bg-slate-900/90 border border-slate-800 text-slate-400 text-[10px] py-1.5 px-4 rounded-lg font-mono">
+                AI Prediction is frozen until sync finishes
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Climbing Active Flight State */}
       {status === 'climbing' && (

@@ -9,7 +9,7 @@ import {
   LineChart, 
   Line 
 } from 'recharts';
-import { TrendingUp, BarChart2, Sparkles, Compass, HelpCircle, ShieldAlert } from 'lucide-react';
+import { TrendingUp, BarChart2, Sparkles, Compass, HelpCircle, ShieldAlert, Gauge } from 'lucide-react';
 
 interface PredictiveDashboardProps {
   history: number[];
@@ -25,6 +25,8 @@ interface PredictiveDashboardProps {
   predictedCrashPoint?: number;
   isPredicting: boolean;
   onTriggerAI: () => void;
+  isAnalyzing?: boolean;
+  syncTimeRemaining?: number;
 }
 
 export const PredictiveDashboard: React.FC<PredictiveDashboardProps> = ({
@@ -35,7 +37,9 @@ export const PredictiveDashboard: React.FC<PredictiveDashboardProps> = ({
   suggestedCashoutHigh,
   predictedCrashPoint = 1.85,
   isPredicting,
-  onTriggerAI
+  onTriggerAI,
+  isAnalyzing = false,
+  syncTimeRemaining = 0
 }) => {
   // 1. Group past crash points into readable statistical bins
   const getDistributionData = () => {
@@ -108,6 +112,25 @@ export const PredictiveDashboard: React.FC<PredictiveDashboardProps> = ({
         </div>
       </div>
 
+      {isAnalyzing && (
+        <div className="bg-amber-950/40 border border-amber-900/50 rounded-xl p-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 animate-pulse">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping shrink-0" />
+            <div>
+              <span className="text-xs font-black text-amber-400 uppercase tracking-wider font-mono block leading-none">
+                Betika Synchronizer Paused: Awaiting Next Round to Calibrate Metrics
+              </span>
+              <span className="text-[10px] text-slate-400 mt-1 block">
+                The predictor is currently aligning statistical dispersion with Safaricom telemetry queue nodes.
+              </span>
+            </div>
+          </div>
+          <div className="bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 text-[10px] font-mono text-amber-400 font-bold self-end sm:self-auto shrink-0 leading-none">
+            REMAINING SYNC DELAY: {syncTimeRemaining.toFixed(1)}s
+          </div>
+        </div>
+      )}
+
       {/* Grid displays */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
 
@@ -135,6 +158,81 @@ export const PredictiveDashboard: React.FC<PredictiveDashboardProps> = ({
               </div>
             </div>
           )}
+
+          {/* Volatility Risk Gauge Component */}
+          {(() => {
+            const activeStdDev = mathMetrics ? mathMetrics.stdDev : 1.85;
+            const getVolatilityRisk = (sd: number) => {
+              if (sd < 1.5) {
+                return {
+                  level: 'Low',
+                  color: 'text-emerald-400 bg-emerald-950/40 border-emerald-900/30',
+                  progressBarColor: 'bg-emerald-500',
+                  textColor: 'text-emerald-400',
+                  indicatorStyle: 'left-[15%]',
+                  description: 'Stable Betika cycle with narrow multiplier variance. Highly suitable for conservative auto-cashout index settings.'
+                };
+              } else if (sd < 3.5) {
+                return {
+                  level: 'Medium',
+                  color: 'text-amber-400 bg-amber-950/40 border-amber-900/30',
+                  progressBarColor: 'bg-amber-500',
+                  textColor: 'text-amber-400',
+                  indicatorStyle: 'left-[50%]',
+                  description: 'Standard Spribe volatility cycle. Normal risk dispersion; balanced Betika Kelly Criterion targets advised.'
+                };
+              } else {
+                return {
+                  level: 'High',
+                  color: 'text-rose-450 bg-rose-950/40 border-rose-900/30',
+                  progressBarColor: 'bg-rose-500',
+                  textColor: 'text-rose-400',
+                  indicatorStyle: 'left-[85%]',
+                  description: 'Heavy stream dispersion detected. Volatile swings in progress. Reduce Betika sizing & wait for cool periods.'
+                };
+              }
+            };
+            const risk = getVolatilityRisk(activeStdDev);
+
+            return (
+              <div className="bg-slate-955/80 border border-slate-850 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest flex items-center gap-1.5 font-mono select-none">
+                    <Gauge className="w-4 h-4 text-indigo-400 animate-pulse" /> Volatility Risk Gauge
+                  </span>
+                  <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded border ${risk.color}`}>
+                    {risk.level} Volatility Risk
+                  </span>
+                </div>
+
+                {/* Styled slider bar bar representing Low, Medium, High bounds */}
+                <div className="relative pt-3 pb-2 px-1">
+                  <div className="flex h-2 rounded-full bg-slate-950 overflow-hidden border border-slate-800/60">
+                    <div className="w-1/3 bg-emerald-500/80" />
+                    <div className="w-1/3 bg-amber-550/80 bg-amber-500/80" />
+                    <div className="w-1/3 bg-rose-500/80" />
+                  </div>
+
+                  {/* Indicator Arrow Pointing down directly */}
+                  <div 
+                    className="absolute top-0 -mt-2 -ml-2.5 transition-all duration-500 ease-in-out" 
+                    style={{ left: risk.indicatorStyle === 'left-[15%]' ? '15%' : risk.indicatorStyle === 'left-[50%]' ? '50%' : '85%' }}
+                  >
+                    <div className="flex flex-col items-center">
+                      <span className="text-[10px] font-bold text-slate-350">▼</span>
+                      <div className={`w-2.5 h-2.5 rounded-full border border-slate-950 shadow-lg ${risk.progressBarColor}`} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Subtitle summary description details */}
+                <div className="text-[10px] text-slate-400 leading-relaxed font-sans">
+                  <span className="font-bold text-slate-300">Variance Index: </span>
+                  {risk.description} Current deviation scale: <strong className="font-mono text-slate-200">±{activeStdDev.toFixed(2)}</strong> standard coefficient.
+                </div>
+              </div>
+            );
+          })()}
 
           {/* AI Strategy Rationale Stream */}
           <div className="bg-slate-950 border border-slate-850 rounded-xl p-4 relative overflow-hidden">

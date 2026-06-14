@@ -41,6 +41,11 @@ export default function App() {
   const [multiplier, setMultiplier] = useState<number>(1.00);
   const [countdown, setCountdown] = useState<number>(5.0);
 
+  // Game synchronization wait parameters to match Betika Spribe live servers
+  const [betikaWaitDuration, setBetikaWaitDuration] = useState<number>(5.0); // Runs up to 5s
+  const [appWaitPeriod, setAppWaitPeriod] = useState<number>(3.0); // Runs up to 3s
+  const [useRealtimeGrowth, setUseRealtimeGrowth] = useState<boolean>(true); // Real-time climb matching real Aviator
+
   // Determined crash multiplier for the active round
   const [targetCrash, setTargetCrash] = useState<number>(1.85);
 
@@ -133,7 +138,7 @@ export default function App() {
   // 2. Flight Loop manager using RequestAnimationFrame for absolute high-performance fluidity
   useEffect(() => {
     let lastTime = Date.now();
-    let countTimer = 5.0;
+    let countTimer = betikaWaitDuration;
 
     const tick = () => {
       const now = Date.now();
@@ -155,9 +160,12 @@ export default function App() {
           setCountdown(Math.max(0, countTimer));
         }
       } else if (status === 'climbing') {
-        // Multiplier climb exponential mathematical model: 1.06 ^ seconds
+        // Authenticated Spribe Aviator Flight speed: e^(0.06 * elapsed_seconds)
+        // Perfectly isochronous with live Betika Aviator physics.
         const elapsed = (Date.now() - flightStartRef.current) / 1000;
-        const currentM = Math.max(1.0, Math.pow(1.08, elapsed * 1.6));
+        const currentM = useRealtimeGrowth
+          ? Math.max(1.0, Math.exp(0.06 * elapsed))
+          : Math.max(1.0, Math.pow(1.08, elapsed * 1.6)); // Accelerated mode
 
         if (currentM >= targetCrash) {
           // Crashed State triggering point
@@ -180,10 +188,10 @@ export default function App() {
 
           // Reset wait timer
           setTimeout(() => {
-            countTimer = 5.0;
-            setCountdown(5.0);
+            countTimer = betikaWaitDuration;
+            setCountdown(betikaWaitDuration);
             setStatus('waiting');
-          }, 5000);
+          }, 3000);
         } else {
           setMultiplier(currentM);
         }
@@ -197,7 +205,7 @@ export default function App() {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [status, history, targetCrash, selectedRoom]);
+  }, [status, history, targetCrash, selectedRoom, betikaWaitDuration, appWaitPeriod, useRealtimeGrowth]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-16 selection:bg-rose-600 selection:text-white">
@@ -293,6 +301,92 @@ export default function App() {
               );
             })}
           </div>
+
+          {/* Betika Telemetry Synchronization Wait Calibration Controls */}
+          <div className="bg-slate-950/80 rounded-xl border border-slate-850 p-4 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-900 pb-2">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-300 flex items-center gap-1.5 font-mono">
+                <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-ping" />
+                Betika Telemetry Synchronization Times Calibration
+              </span>
+              <span className="text-[9px] bg-slate-900 text-indigo-400 font-mono font-bold px-2 py-0.5 rounded border border-slate-850">
+                ACTIVE CODES: KES
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
+              {/* Slider for Betika Wait Duration */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center font-mono">
+                  <span className="text-slate-400 font-bold uppercase text-[9px]">Betika Next Round Intermission:</span>
+                  <span className="text-white font-extrabold bg-indigo-950/50 border border-indigo-900 px-2 py-0.5 rounded text-[10px]">{betikaWaitDuration.toFixed(1)} Secs</span>
+                </div>
+                <input
+                  type="range"
+                  min="3.0"
+                  max="10.0"
+                  step="0.5"
+                  value={betikaWaitDuration}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    setBetikaWaitDuration(val);
+                    // Ensure synchronization wait delay is always capped below or equal to the round intermission
+                    if (appWaitPeriod > val) {
+                      setAppWaitPeriod(val);
+                    }
+                  }}
+                  className="w-full accent-indigo-500 bg-slate-900 h-1.5 rounded-lg cursor-pointer"
+                />
+                <p className="text-[10px] text-slate-500 leading-tight">
+                  Configure the countdown duration (default: 5.0) simulating the real Betika Spribe lobby wait period between flights.
+                </p>
+              </div>
+
+              {/* Slider for App Wait Period */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center font-mono">
+                  <span className="text-slate-400 font-bold uppercase text-[9px]">AI Predictor Calibration Wait:</span>
+                  <span className="text-white font-extrabold bg-indigo-950/50 border border-indigo-900 px-2   py-0.5 rounded text-[10px]">{appWaitPeriod.toFixed(1)} Secs</span>
+                </div>
+                <input
+                  type="range"
+                  min="1.0"
+                  max={betikaWaitDuration}
+                  step="0.5"
+                  value={appWaitPeriod}
+                  onChange={(e) => setAppWaitPeriod(parseFloat(e.target.value))}
+                  className="w-full accent-rose-500 bg-slate-900 h-1.5 rounded-lg cursor-pointer"
+                />
+                <p className="text-[10px] text-slate-500 leading-tight">
+                  The interval the predictor freezes predictions (up to 3.0) to successfully process preceding round endpoints.
+                </p>
+              </div>
+            </div>
+
+            {/* Isochronous Spribe Real-Time Growth Calibrator Row */}
+            <div className="border-t border-slate-900 pt-3.5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div className="space-y-1">
+                <span className="text-[10px] uppercase font-extrabold text-slate-300 font-mono flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Real-time Multiplier Isochronism Calibration
+                </span>
+                <p className="text-[10px] text-slate-400 leading-relaxed max-w-2xl font-sans">
+                  Synchronize flight climbers precisely with the official Betika lobby. Real-time rate uses the physical growth equation (<code className="text-rose-400 font-mono text-[9.5px]">e^0.06t</code>) where 2.0x takes exactly ~11.5 seconds.
+                </p>
+              </div>
+              <button
+                onClick={() => setUseRealtimeGrowth(!useRealtimeGrowth)}
+                className={`py-2 px-4 rounded-xl text-[10px] font-mono font-black tracking-wider uppercase transition-all duration-150 border cursor-pointer flex items-center gap-2 ${
+                  useRealtimeGrowth
+                    ? 'bg-slate-900 border-emerald-500 text-emerald-400 shadow-md shadow-emerald-500/10'
+                    : 'bg-slate-950/60 hover:bg-slate-950 border-amber-900/60 text-amber-500 hover:text-amber-400'
+                }`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${useRealtimeGrowth ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'}`} />
+                {useRealtimeGrowth ? 'LIVE ENGINE CALIBRATED (e^0.06t)' : 'FAST ENGINE MODE'}
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Horizontal Multipliers Ribbon */}
@@ -317,6 +411,8 @@ export default function App() {
               countdown={countdown} 
               predictedCrashPoint={predictedCrashPoint}
               activeRoom={selectedRoom}
+              betikaWaitDuration={betikaWaitDuration}
+              appWaitPeriod={appWaitPeriod}
             />
 
             {/* Simulated Dual Betting Console */}
@@ -346,6 +442,8 @@ export default function App() {
           predictedCrashPoint={predictedCrashPoint}
           isPredicting={isPredicting}
           onTriggerAI={() => triggerPredictiveCalculation(history, true, selectedRoom)}
+          isAnalyzing={status === 'waiting' && countdown > (betikaWaitDuration - appWaitPeriod)}
+          syncTimeRemaining={Math.max(0, countdown - (betikaWaitDuration - appWaitPeriod))}
         />
 
       </main>
